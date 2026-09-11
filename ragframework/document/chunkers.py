@@ -96,3 +96,149 @@ class SentenceChunker(TextChunker):
             chunk_num += 1
             index += step
         return chunks
+
+
+class RecursiveChunker(TextChunker):
+    """Split text recursively using a hierarchy of separators.
+
+    Args:
+        separators: List of separators to use. Defaults to paragraphs, lines, sentences, words, chars.
+        chunk_size: Maximum number of characters per chunk.
+        chunk_overlap: Maximum number of overlapping characters between adjacent chunks.
+    """
+
+    def __init__(
+        self,
+        separators: list[str] | None = None,
+        chunk_size: int = 512,
+        chunk_overlap: int = 64,
+    ) -> None:
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
+        if chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be non-negative")
+        if chunk_overlap >= chunk_size:
+            raise ValueError("chunk_overlap must be less than chunk_size")
+
+        self.separators = (
+            list(separators) if separators is not None else ["\n\n", "\n", ". ", " ", ""]
+        )
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+    def chunk(self, document: Document) -> list[Chunk]:
+        if not document.content:
+            return []
+
+        text_chunks = self._split_text(document.content, self.separators)
+
+        chunks: list[Chunk] = []
+        for i, content in enumerate(text_chunks):
+            chunks.append(
+                Chunk(
+                    id=f"{document.id}:{i}",
+                    content=content,
+                    # We create a new dict for metadata as requested to avoid mutating document metadata
+                    metadata={**document.metadata, "chunk_index": i},
+                )
+            )
+        return chunks
+
+    def _split_text(self, text: str, separators: list[str]) -> list[str]:
+        if len(text) <= self.chunk_size:
+            return [text]
+
+        separator = ""
+        next_separators: list[str] = []
+
+        if separators:
+            for i, sep in enumerate(separators):
+                if sep == "":
+                    separator = sep
+                    next_separators = separators[i + 1 :]
+                    break
+                if sep in text:
+                    separator = sep
+                    next_separators = separators[i + 1 :]
+                    break
+
+        if separator == "":
+            result = []
+            step = self.chunk_size - self.chunk_overlap
+            idx = 0
+            while idx < len(text):
+                end = min(idx + self.chunk_size, len(text))
+                result.append(text[idx:end])
+                if end == len(text):
+                    break
+                idx += step
+                if step <= 0:
+                    break
+            return result
+
+        pieces = text.split(separator)
+        # Reconstruct separators between pieces
+        for i in range(len(pieces) - 1):
+            pieces[i] += separator
+
+        return self._merge_pieces(pieces, next_separators)
+
+    def _merge_pieces(self, pieces: list[str], next_separators: list[str]) -> list[str]:
+        final_chunks: list[str] = []
+        current_chunk_pieces: list[str] = []
+        current_length = 0
+
+        for piece in pieces:
+            if len(piece) > self.chunk_size:
+                if current_chunk_pieces:
+                    final_chunks.append("".join(current_chunk_pieces))
+
+                    overlap_pieces: list[str] = []
+                    for p in reversed(current_chunk_pieces):
+                        next_overlap = [p] + overlap_pieces
+                        next_len = sum(len(x) for x in next_overlap)
+                        if next_len <= self.chunk_overlap:
+                            overlap_pieces = next_overlap
+                        else:
+                            break
+
+                    piece = "".join(overlap_pieces) + piece
+                    current_chunk_pieces = []
+                    current_length = 0
+
+                sub_chunks = self._split_text(piece, next_separators)
+
+                if len(sub_chunks) > 1:
+                    final_chunks.extend(sub_chunks[:-1])
+
+                if sub_chunks:
+                    current_chunk_pieces = [sub_chunks[-1]]
+                    current_length = len(sub_chunks[-1])
+            else:
+                added_length = len(piece)
+                if current_length + added_length <= self.chunk_size:
+                    current_chunk_pieces.append(piece)
+                    current_length += added_length
+                else:
+                    final_chunks.append("".join(current_chunk_pieces))
+
+                    overlap_pieces = []
+                    for p in reversed(current_chunk_pieces):
+                        next_overlap_pieces = [p] + overlap_pieces
+                        next_overlap_length = sum(len(x) for x in next_overlap_pieces)
+
+                        if (
+                            next_overlap_length <= self.chunk_overlap
+                            and next_overlap_length + len(piece) <= self.chunk_size
+                        ):
+                            overlap_pieces = next_overlap_pieces
+                        else:
+                            break
+
+                    current_chunk_pieces = overlap_pieces + [piece] if overlap_pieces else [piece]
+                    current_length = sum(len(x) for x in current_chunk_pieces)
+
+        if current_chunk_pieces:
+            final_chunks.append("".join(current_chunk_pieces))
+
+        return final_chunks
