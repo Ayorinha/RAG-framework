@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `HuggingFaceEmbedder` for local embeddings with Sentence Transformers (closes #7)
 - RecursiveChunker for semantics-preserving text splitting (closes #3)
 - PDFLoader with support for per-page and whole-file modes (closes #1)
 ## [0.1.0] - 2026-03-24
