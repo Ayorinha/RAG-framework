@@ -9,7 +9,9 @@ import numpy as np
 try:
     import faiss
 except ImportError:
-    faiss = None
+    _FAISS_AVAILABLE = False
+else:
+    _FAISS_AVAILABLE = True
 
 from ragframework.base import Chunk, Retriever
 from ragframework.exceptions import RetrieverError
@@ -38,7 +40,7 @@ class FAISSRetriever(Retriever):
     """
 
     def __init__(self, m: int = 32, ef_construction: int = 40, ef_search: int = 16) -> None:
-        if faiss is None:
+        if not _FAISS_AVAILABLE:
             raise ImportError(_INSTALL_HINT)
         if any(
             not isinstance(value, int) or isinstance(value, bool) or value <= 0
