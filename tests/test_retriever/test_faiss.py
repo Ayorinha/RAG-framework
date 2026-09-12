@@ -3,6 +3,7 @@
 import subprocess
 import sys
 
+import faiss
 import numpy as np
 import pytest
 
@@ -48,6 +49,17 @@ def test_batches_append_without_replacing_existing_chunks() -> None:
 
     assert len(retriever) == 2
     assert retriever.retrieve([0.0, 1.0, 0.0], top_k=2)[0] is second
+
+
+def test_hnsw_index_uses_configured_parameters_and_inner_product() -> None:
+    retriever = FAISSRetriever(m=12, ef_construction=48, ef_search=24)
+    retriever.add([make_chunk("one", [1.0, 0.0])])
+
+    assert isinstance(retriever._index, faiss.IndexHNSWFlat)
+    assert retriever._index.metric_type == faiss.METRIC_INNER_PRODUCT
+    assert retriever._index.hnsw.nb_neighbors(1) == 12
+    assert retriever._index.hnsw.efConstruction == 48
+    assert retriever._index.hnsw.efSearch == 24
 
 
 def test_empty_batch_and_empty_index_return_empty() -> None:
@@ -161,6 +173,23 @@ def test_faiss_search_failure_is_wrapped(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(retriever._index, "search", fail)
     with pytest.raises(RetrieverError, match="failed to search") as exc_info:
         retriever.retrieve([1.0, 0.0])
+    assert isinstance(exc_info.value.__cause__, RuntimeError)
+
+
+def test_faiss_add_failure_is_wrapped_without_extending_chunk_mapping(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    retriever = FAISSRetriever()
+    retriever.add([make_chunk("existing", [1.0, 0.0])])
+
+    def fail(_vectors: np.ndarray) -> None:
+        raise RuntimeError("native failure")
+
+    monkeypatch.setattr(retriever._index, "add", fail)
+    with pytest.raises(RetrieverError, match="failed to add") as exc_info:
+        retriever.add([make_chunk("new", [0.0, 1.0])])
+    assert len(retriever) == 1
+    assert retriever._chunks[0].id == "existing"
     assert isinstance(exc_info.value.__cause__, RuntimeError)
 
 
