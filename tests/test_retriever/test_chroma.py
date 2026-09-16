@@ -142,21 +142,15 @@ def test_non_positive_top_k_returns_empty():
         ]
     )
 
-    assert (
-        retriever.retrieve(
-            [1.0, 0.0],
-            top_k=0,
-        )
-        == []
-    )
+    assert retriever.retrieve(
+        [1.0, 0.0],
+        top_k=0,
+    ) == []
 
-    assert (
-        retriever.retrieve(
-            [1.0, 0.0],
-            top_k=-1,
-        )
-        == []
-    )
+    assert retriever.retrieve(
+        [1.0, 0.0],
+        top_k=-1,
+    ) == []
 
 
 def test_metadata_is_preserved():
@@ -272,3 +266,33 @@ def test_persistent_storage(tmp_path: Path):
     assert len(results) == 1
     assert results[0].id == "persistent-chunk"
     assert results[0].metadata["source"] == "persistent.txt"
+
+
+def test_user_metadata_with_old_empty_marker_is_preserved():
+    retriever = ChromaRetriever(
+        collection_name="test_metadata_marker_collision",
+    )
+
+    metadata = {
+        "_ragframework_empty_metadata": True,
+        "source": "document.pdf",
+        "page": 3,
+    }
+
+    retriever.add(
+        [
+            make_chunk(
+                "collision-test",
+                [1.0, 0.0],
+                metadata,
+            )
+        ]
+    )
+
+    results = retriever.retrieve(
+        [1.0, 0.0],
+        top_k=1,
+    )
+
+    assert len(results) == 1
+    assert results[0].metadata == metadata

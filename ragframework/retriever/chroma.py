@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from ragframework.base import Chunk, Retriever
@@ -19,7 +21,7 @@ class ChromaRetriever(Retriever):
             ChromaDB uses an ephemeral in-memory client.
     """
 
-    _EMPTY_METADATA_KEY = "_ragframework_empty_metadata"
+    _METADATA_KEY = "_ragframework_metadata"
 
     def __init__(
         self,
@@ -46,12 +48,16 @@ class ChromaRetriever(Retriever):
                 name=collection_name,
             )
         except Exception as exc:
-            raise RetrieverError(f"Could not initialize ChromaDB: {exc}") from exc
+            raise RetrieverError(
+                f"Could not initialize ChromaDB: {exc}"
+            ) from exc
 
     def add(self, chunks: list[Chunk]) -> None:
         """Add embedded chunks to the ChromaDB collection."""
         if not chunks:
             return
+
+        embeddings: list[Sequence[float]] = []
 
         for chunk in chunks:
             if chunk.embedding is None:
@@ -60,15 +66,19 @@ class ChromaRetriever(Retriever):
                     "Embed chunks before adding them to the retriever."
                 )
 
+            embeddings.append(chunk.embedding)
+
         try:
             self._collection.upsert(
                 ids=[chunk.id for chunk in chunks],
-                embeddings=[chunk.embedding for chunk in chunks],
+                embeddings=embeddings,
                 documents=[chunk.content for chunk in chunks],
                 metadatas=[self._metadata(chunk) for chunk in chunks],
             )
         except Exception as exc:
-            raise RetrieverError(f"Failed to add chunks to ChromaDB: {exc}") from exc
+            raise RetrieverError(
+                f"Failed to add chunks to ChromaDB: {exc}"
+            ) from exc
 
     def retrieve(
         self,
@@ -79,20 +89,28 @@ class ChromaRetriever(Retriever):
         if top_k <= 0:
             return []
 
+        query_embeddings: list[Sequence[float]] = [query_embedding]
+
         try:
             result = self._collection.query(
-                query_embeddings=[query_embedding],
+                query_embeddings=query_embeddings,
                 n_results=top_k,
                 include=["documents", "metadatas"],
             )
         except Exception as exc:
-            raise RetrieverError(f"Failed to query ChromaDB: {exc}") from exc
+            raise RetrieverError(
+                f"Failed to query ChromaDB: {exc}"
+            ) from exc
 
-        ids = result.get("ids", [[]])[0]
-        documents = result.get("documents", [[]])[0]
-        metadatas = result.get("metadatas", [[]])[0]
+        ids_result = result.get("ids") or []
+        documents_result = result.get("documents") or []
+        metadatas_result = result.get("metadatas") or []
 
-        chunks: list[Chunk] = []
+        ids = ids_result[0] if ids_result else []
+        documents = documents_result[0] if documents_result else []
+        metadatas = metadatas_result[0] if metadatas_result else []
+
+        chunks_result: list[Chunk] = []
 
         for chunk_id, document, metadata in zip(
             ids,
@@ -100,24 +118,19 @@ class ChromaRetriever(Retriever):
             metadatas,
             strict=True,
         ):
-            metadata = metadata or {}
-
-            if metadata.get(self._EMPTY_METADATA_KEY):
-                metadata = {}
-
-            chunks.append(
+            chunks_result.append(
                 Chunk(
                     id=chunk_id,
                     content=document or "",
-                    metadata=metadata,
+                    metadata=self._restore_metadata(metadata or {}),
                 )
             )
 
-        return chunks
+        return chunks_result
 
     @classmethod
-    def _metadata(cls, chunk: Chunk) -> dict[str, Any]:
-        """Return Chroma-compatible metadata for a chunk."""
+    def _metadata(cls, chunk: Chunk) -> dict[str, str]:
+        """Serialize chunk metadata into a collision-safe Chroma value."""
         metadata: dict[str, Any] = {}
 
         for key, value in chunk.metadata.items():
@@ -126,12 +139,34 @@ class ChromaRetriever(Retriever):
             else:
                 metadata[key] = str(value)
 
-        # ChromaDB requires metadata to be a non-empty dictionary.
-        if not metadata:
-            metadata[cls._EMPTY_METADATA_KEY] = True
+        return {
+            cls._METADATA_KEY: json.dumps(
+                metadata,
+                sort_keys=True,
+            )
+        }
 
-        return metadata
+    @classmethod
+    def _restore_metadata(
+        cls,
+        metadata: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Restore framework metadata from ChromaDB."""
+        serialized = metadata.get(cls._METADATA_KEY)
+
+        if not isinstance(serialized, str):
+            return dict(metadata)
+
+        try:
+            restored = json.loads(serialized)
+        except json.JSONDecodeError:
+            return dict(metadata)
+
+        if isinstance(restored, dict):
+            return restored
+
+        return dict(metadata)
 
     def __len__(self) -> int:
         """Return the number of chunks stored in the collection."""
-        return self._collection.count()
+        return int(self._collection.count())
