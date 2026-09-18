@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `AnthropicGenerator` for grounded answers via the Anthropic Messages API (closes #20)
 - `ChromaRetriever` for ephemeral and persistent ChromaDB-backed vector retrieval (closes #5)
 - `FAISSRetriever` for approximate cosine-similarity search with an HNSW index (closes #4)
 - `HuggingFaceEmbedder` for local embeddings with Sentence Transformers (closes #7)
