@@ -21,6 +21,7 @@ matches = retriever.retrieve([0.9, 0.1], top_k=1)
 |------|-------------|
 | [basic_rag.py](basic_rag.py) | End-to-end pipeline using only built-in components (no API key needed) |
 | [basic_rag.ipynb](basic_rag.ipynb) | Interactive Jupyter notebook covering the complete RAG pipeline |
+| [anthropic_generator.py](anthropic_generator.py) | End-to-end pipeline using `AnthropicGenerator` (requires `ANTHROPIC_API_KEY`) |
 
 ## Running the examples
 
@@ -31,6 +32,14 @@ From the repository root:
 ```bash
 pip install -e ".[dev]"
 python examples/basic_rag.py
+```
+
+For the Anthropic example:
+
+```bash
+pip install -e ".[dev,anthropic]"
+export ANTHROPIC_API_KEY=your-key-here
+python examples/anthropic_generator.py
 ```
 
 ### Jupyter notebook

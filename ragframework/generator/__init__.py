@@ -1,5 +1,6 @@
 """Generator implementations."""
 
+from ragframework.generator.anthropic import AnthropicGenerator
 from ragframework.generator.echo_generator import EchoGenerator
 
-__all__ = ["EchoGenerator"]
+__all__ = ["AnthropicGenerator", "EchoGenerator"]
