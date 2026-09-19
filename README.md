@@ -167,9 +167,10 @@ Contributions are what make open source great. Please read [CONTRIBUTING.md](CON
 
 1. Fork the repo and create a branch: `git checkout -b feat/my-feature`
 2. Install dev dependencies: `pip install -e ".[dev]"`
-3. Write your code and tests
-4. Run the suite: `pytest tests/ -v`
-5. Open a pull request
+3. Enable the Git hooks: `pre-commit install` (Python 3.10 is required for the isolated mypy hook)
+4. Write your code and tests
+5. Run the checks: `pre-commit run --all-files` and `pytest tests/ -v`
+6. Open a pull request
 
 ---
 
