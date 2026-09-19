@@ -24,6 +24,9 @@ class CrossEncoderReranker(Reranker):
             raise RerankerError(f"Could not load reranker model: {exc}") from exc
 
     def rerank(self, query: str, chunks: list[Chunk], top_k: int) -> list[Chunk]:
+        if not chunks:
+            return []
+
         try:
             scores = self._model.predict([(query, chunk.content) for chunk in chunks])
         except Exception as exc:
