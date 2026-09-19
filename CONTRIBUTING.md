@@ -62,6 +62,15 @@ Install the Git hooks once per clone:
 pre-commit install
 ```
 
+The mypy hook uses an isolated Python 3.10 environment with NumPy pinned to
+the version compatible with the project's type-check target. Ensure Python
+3.10 is installed before running the hooks. Run all hooks manually when
+needed:
+
+```bash
+pre-commit run --all-files
+```
+
 To install optional extras (e.g. while adding a PDF loader):
 
 ```bash

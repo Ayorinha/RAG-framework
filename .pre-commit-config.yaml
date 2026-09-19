@@ -21,8 +21,12 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: python -m mypy
-        language: system
+        entry: mypy
+        language: python
+        language_version: python3.10
+        additional_dependencies:
+          - mypy>=1.10
+          - numpy==2.2.6
         types: [python]
         pass_filenames: false
         args: [ragframework/]
