@@ -169,7 +169,7 @@ The constraint does not change the package's runtime dependency requirements.
 
 ## Pull Request Process
 
-1. Make sure `pytest`, `ruff`, and `mypy` all pass locally.
+1. Make sure `pytest tests/ -v` and `pre-commit run --all-files` (ruff, mypy, and file hygiene hooks) both pass locally.
 2. Add or update tests to cover your changes.
 3. Update docstrings and `CHANGELOG.md` under `[Unreleased]`.
 4. Keep PRs focused — one feature or bug fix per PR.
