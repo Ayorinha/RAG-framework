@@ -27,6 +27,21 @@ def test_cross_encoder_reranks(monkeypatch):
     assert result[0].metadata["rerank_score"] == 0.9
 
 
+def test_cross_encoder_skips_prediction_for_empty_candidates(monkeypatch):
+    class FailOnPredictCrossEncoder:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def predict(self, pairs):
+            raise AssertionError("predict should not be called for empty candidates")
+
+    module = types.ModuleType("sentence_transformers")
+    module.CrossEncoder = FailOnPredictCrossEncoder
+    monkeypatch.setitem(sys.modules, "sentence_transformers", module)
+
+    assert CrossEncoderReranker().rerank("q", [], 1) == []
+
+
 def test_noop_reranker():
     chunks = [Chunk(id="a", content="a"), Chunk(id="b", content="b")]
     assert NoOpReranker().rerank("q", chunks, 1) == chunks[:1]
