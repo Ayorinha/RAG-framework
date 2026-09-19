@@ -145,6 +145,8 @@ class RAGPipeline:
                 chunks = self.reranker.rerank(query, chunks, top_k=self.config.top_k)
             except Exception as exc:
                 raise PipelineError(f"Reranking failed: {exc}") from exc
+        else:
+            chunks = chunks[: self.config.top_k]
 
         try:
             answer = self.generator.generate(query, chunks)
