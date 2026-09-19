@@ -20,6 +20,12 @@ def test_custom_values():
     assert cfg.top_k == 3
 
 
+def test_positional_arguments_preserve_embedding_dim():
+    cfg = RAGConfig(512, 64, 5, 16)
+    assert cfg.embedding_dim == 16
+    assert cfg.retrieve_k is None
+
+
 def test_invalid_chunk_size():
     with pytest.raises(ValueError, match="chunk_size"):
         RAGConfig(chunk_size=0)
