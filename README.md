@@ -1,6 +1,6 @@
 # RAG Framework
 
-[![PyPI version](https://img.shields.io/badge/pypi-coming%20soon-lightgrey)](https://github.com/adaumsilva/RAG-framework)
+[![PyPI version](https://img.shields.io/pypi/v/ragframework.svg)](https://pypi.org/project/ragframework/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/adaumsilva/RAG-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/adaumsilva/RAG-framework/actions/workflows/ci.yml)
@@ -70,26 +70,29 @@ A modular, extensible Python framework for building **Retrieval-Augmented Genera
 
 ## Installation
 
-> **Note:** The package is not yet on PyPI. Install directly from GitHub:
-
 ```bash
 # Core (numpy only)
-pip install git+https://github.com/adaumsilva/RAG-framework.git
+pip install ragframework
 
 # With PDF support
-pip install "ragframework[pdf] @ git+https://github.com/adaumsilva/RAG-framework.git"
+pip install "ragframework[pdf]"
 
-# With OpenAI support
-pip install "ragframework[openai] @ git+https://github.com/adaumsilva/RAG-framework.git"
+# With HuggingFace embeddings (local, no API key)
+pip install "ragframework[huggingface]"
 
-# With HuggingFace embeddings
-pip install "ragframework[huggingface] @ git+https://github.com/adaumsilva/RAG-framework.git"
+# With a vector store
+pip install "ragframework[faiss]"
+pip install "ragframework[chromadb]"
+
+# With the Anthropic generator
+pip install "ragframework[anthropic]"
 
 # Everything
-pip install "ragframework[all] @ git+https://github.com/adaumsilva/RAG-framework.git"
+pip install "ragframework[all]"
 ```
 
-Once published to PyPI, installation will simplify to `pip install ragframework`.
+Requires Python 3.10 or newer. To install the latest unreleased code from `main`, or to
+contribute, see [CONTRIBUTING.md](CONTRIBUTING.md) for the editable-install setup.
 
 ---
 
