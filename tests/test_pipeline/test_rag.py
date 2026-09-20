@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from ragframework.base import Embedder
 from ragframework.config import RAGConfig
 from ragframework.document.chunkers import FixedSizeChunker
 from ragframework.document.loaders import TextFileLoader
@@ -24,6 +25,20 @@ def pipeline(tmp_text_file):
         generator=EchoGenerator(),
         config=RAGConfig(top_k=2),
     )
+
+
+class ShortSecondCallEmbedder(Embedder):
+    """Embedder that returns too few vectors on the second call."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        self.calls += 1
+        embeddings = [[float(index + 1)] * 16 for index, _ in enumerate(texts)]
+        if self.calls == 2:
+            return embeddings[:-1]
+        return embeddings
 
 
 class TestRAGPipeline:
@@ -68,6 +83,30 @@ class TestRAGPipeline:
         assert str(missing_source) in message
         assert "1 source" in message
         assert "1 chunk" in message
+
+    def test_ingest_many_wraps_unexpected_ingest_error_with_progress(self, tmp_path):
+        first = tmp_path / "first.txt"
+        second = tmp_path / "second.txt"
+        first.write_text("alpha " * 30, encoding="utf-8")
+        second.write_text("beta " * 30, encoding="utf-8")
+        p = RAGPipeline(
+            loader=TextFileLoader(),
+            chunker=FixedSizeChunker(chunk_size=50, chunk_overlap=10),
+            embedder=ShortSecondCallEmbedder(),
+            retriever=InMemoryRetriever(),
+            generator=EchoGenerator(),
+        )
+        first_count = len(p.chunker.chunk(p.loader.load(str(first))[0]))
+
+        with pytest.raises(PipelineError) as exc_info:
+            p.ingest_many([str(first), str(second)])
+
+        assert isinstance(exc_info.value.__cause__, ValueError)
+        message = str(exc_info.value)
+        assert str(second) in message
+        assert "1 source" in message
+        assert f"{first_count} chunks" in message
+        assert len(p.retriever._chunks) == first_count
 
     def test_ingest_missing_file_raises_pipeline_error(self, pipeline):
         with pytest.raises(PipelineError):

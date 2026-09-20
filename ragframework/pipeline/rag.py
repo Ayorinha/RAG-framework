@@ -133,7 +133,7 @@ class RAGPipeline:
         for successful_sources, source in enumerate(sources):
             try:
                 total_chunks += self.ingest(source)
-            except PipelineError as exc:
+            except Exception as exc:
                 source_label = "source" if successful_sources == 1 else "sources"
                 chunk_label = "chunk" if total_chunks == 1 else "chunks"
                 raise PipelineError(
