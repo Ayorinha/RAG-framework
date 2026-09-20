@@ -477,4 +477,3 @@ Responsible for generating an answer using the query and retrieved context.
 Generator.generate(query, context)
 
 ```
-

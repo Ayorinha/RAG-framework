@@ -10,6 +10,7 @@ from ragframework.base import (
     Embedder,
     Generator,
     RAGResponse,
+    Reranker,
     Retriever,
     TextChunker,
 )
@@ -48,6 +49,7 @@ class RAGPipeline:
         embedder: Converts chunk text to dense vectors.
         retriever: Indexes and searches chunks by vector similarity.
         generator: Produces a final answer given the query and retrieved chunks.
+        reranker: Optional second-stage reranker applied after retrieval.
         config: Pipeline configuration (chunk sizes, top-k, …).
     """
 
@@ -59,6 +61,7 @@ class RAGPipeline:
         retriever: Retriever,
         generator: Generator,
         config: RAGConfig | None = None,
+        reranker: Reranker | None = None,
     ) -> None:
         self.loader = loader
         self.chunker = chunker
@@ -66,6 +69,7 @@ class RAGPipeline:
         self.retriever = retriever
         self.generator = generator
         self.config = config or RAGConfig()
+        self.reranker = reranker
 
     def ingest(self, source: str) -> int:
         """Load, chunk, embed, and index a document.
@@ -168,8 +172,22 @@ class RAGPipeline:
 
         try:
             chunks = self.retriever.retrieve(query_embedding, top_k=retrieve_top_k)
+        retrieve_k = self.config.retrieve_k
+        if retrieve_k is None:
+            retrieve_k = self.config.top_k * 4 if self.reranker is not None else self.config.top_k
+
+        try:
+            chunks = self.retriever.retrieve(query_embedding, top_k=retrieve_k)
         except Exception as exc:
             raise PipelineError(f"Retrieval failed: {exc}") from exc
+
+        if self.reranker is not None:
+            try:
+                chunks = self.reranker.rerank(query, chunks, top_k=self.config.top_k)
+            except Exception as exc:
+                raise PipelineError(f"Reranking failed: {exc}") from exc
+        else:
+            chunks = chunks[: self.config.top_k]
 
         try:
             answer = self.generator.generate(query, chunks)
