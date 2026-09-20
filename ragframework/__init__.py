@@ -7,13 +7,14 @@ from ragframework.base import (
     Embedder,
     Generator,
     RAGResponse,
+    Reranker,
     Retriever,
     TextChunker,
 )
 from ragframework.config import RAGConfig
 from ragframework.pipeline.rag import RAGPipeline
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = [
     "__version__",
     # Data types
@@ -25,6 +26,7 @@ __all__ = [
     "TextChunker",
     "Embedder",
     "Retriever",
+    "Reranker",
     "Generator",
     # Config
     "RAGConfig",

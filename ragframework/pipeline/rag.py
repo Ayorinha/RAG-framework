@@ -8,6 +8,7 @@ from ragframework.base import (
     Embedder,
     Generator,
     RAGResponse,
+    Reranker,
     Retriever,
     TextChunker,
 )
@@ -47,6 +48,7 @@ class RAGPipeline:
         embedder: Converts chunk text to dense vectors.
         retriever: Indexes and searches chunks by vector similarity.
         generator: Produces a final answer given the query and retrieved chunks.
+        reranker: Optional second-stage reranker applied after retrieval.
         config: Pipeline configuration (chunk sizes, top-k, …).
     """
 
@@ -58,6 +60,7 @@ class RAGPipeline:
         retriever: Retriever,
         generator: Generator,
         config: RAGConfig | None = None,
+        reranker: Reranker | None = None,
     ) -> None:
         self.loader = loader
         self.chunker = chunker
@@ -65,6 +68,7 @@ class RAGPipeline:
         self.retriever = retriever
         self.generator = generator
         self.config = config or RAGConfig()
+        self.reranker = reranker
 
     @classmethod
     def from_config(
@@ -75,6 +79,7 @@ class RAGPipeline:
         embedder: Embedder,
         retriever: Retriever,
         generator: Generator,
+        reranker: Reranker | None = None,
         chunker_cls: type[FixedSizeChunker] = FixedSizeChunker,
     ) -> RAGPipeline:
         """Build a pipeline whose chunker consumes ``config`` chunk settings.
@@ -89,6 +94,7 @@ class RAGPipeline:
             retriever=retriever,
             generator=generator,
             config=config,
+            reranker=reranker,
         )
 
     def _validate_embedding_dimension(self, embedding: list[float]) -> None:
@@ -137,8 +143,8 @@ class RAGPipeline:
         except Exception as exc:
             raise PipelineError(f"Embedding failed: {exc}") from exc
 
-        if embeddings:
-            self._validate_embedding_dimension(embeddings[0])
+        for embedding in embeddings:
+            self._validate_embedding_dimension(embedding)
 
         for chunk, emb in zip(all_chunks, embeddings, strict=True):
             chunk.embedding = emb
@@ -170,10 +176,22 @@ class RAGPipeline:
 
         self._validate_embedding_dimension(query_embedding)
 
+        retrieve_k = self.config.retrieve_k
+        if retrieve_k is None:
+            retrieve_k = self.config.top_k * 4 if self.reranker is not None else self.config.top_k
+
         try:
-            chunks = self.retriever.retrieve(query_embedding, top_k=self.config.top_k)
+            chunks = self.retriever.retrieve(query_embedding, top_k=retrieve_k)
         except Exception as exc:
             raise PipelineError(f"Retrieval failed: {exc}") from exc
+
+        if self.reranker is not None:
+            try:
+                chunks = self.reranker.rerank(query, chunks, top_k=self.config.top_k)
+            except Exception as exc:
+                raise PipelineError(f"Reranking failed: {exc}") from exc
+        else:
+            chunks = chunks[: self.config.top_k]
 
         try:
             answer = self.generator.generate(query, chunks)

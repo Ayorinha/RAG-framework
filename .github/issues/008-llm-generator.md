@@ -1,5 +1,5 @@
 ---
-title: "OpenAI / Anthropic LLM Generator"
+title: "OpenAI LLM Generator"
 labels: ["good first issue", "enhancement"]
 ---
 

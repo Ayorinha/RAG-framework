@@ -11,12 +11,19 @@ def test_defaults():
     assert cfg.chunk_overlap == 64
     assert cfg.top_k == 5
     assert cfg.embedding_dim is None
+    assert cfg.retrieve_k is None
 
 
 def test_custom_values():
     cfg = RAGConfig(chunk_size=256, chunk_overlap=32, top_k=3, embedding_dim=768)
     assert cfg.chunk_size == 256
     assert cfg.top_k == 3
+
+
+def test_positional_arguments_preserve_embedding_dim():
+    cfg = RAGConfig(512, 64, 5, 16)
+    assert cfg.embedding_dim == 16
+    assert cfg.retrieve_k is None
 
 
 def test_invalid_chunk_size():
@@ -42,3 +49,8 @@ def test_invalid_top_k():
 def test_invalid_embedding_dim():
     with pytest.raises(ValueError, match="embedding_dim"):
         RAGConfig(embedding_dim=0)
+
+
+def test_invalid_retrieve_k():
+    with pytest.raises(ValueError, match="retrieve_k"):
+        RAGConfig(retrieve_k=0)
