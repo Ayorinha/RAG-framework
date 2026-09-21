@@ -19,7 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PDFLoader` with support for per-page and whole-file modes (closes #1)
 - `AsyncRAGPipeline` for asynchronous RAG ingestion and querying using `asyncio.to_thread()` (closes #9)
 
+### Fixed
+- Validate configured embedding dimensions during ingestion and querying (closes #29)
+
 ### Changed
+- Make `embedding_dim` validation opt-in and add `RAGPipeline.from_config()` for chunk settings
 - License metadata now uses an SPDX expression (`license = "MIT"`) in `pyproject.toml`
 - Releases are published to PyPI via GitHub Actions trusted publishing (see `RELEASING.md`)
 

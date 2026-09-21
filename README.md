@@ -102,18 +102,24 @@ contribute, see [CONTRIBUTING.md](CONTRIBUTING.md) for the editable-install setu
 
 ```python
 from ragframework import RAGPipeline, RAGConfig
-from ragframework.document import TextFileLoader, FixedSizeChunker
+from ragframework.document import TextFileLoader
 from ragframework.embeddings import RandomEmbedder   # swap for OpenAIEmbedder
 from ragframework.retriever import InMemoryRetriever  # swap for FAISSRetriever
 from ragframework.generator import EchoGenerator      # swap for OpenAIGenerator
 
-pipeline = RAGPipeline(
+config = RAGConfig(
+    chunk_size=512,
+    chunk_overlap=64,
+    top_k=5,
+    embedding_dim=384,
+)
+
+pipeline = RAGPipeline.from_config(
+    config,
     loader=TextFileLoader(),
-    chunker=FixedSizeChunker(chunk_size=512, chunk_overlap=64),
     embedder=RandomEmbedder(dim=384),
     retriever=InMemoryRetriever(),
     generator=EchoGenerator(),
-    config=RAGConfig(top_k=5),
 )
 
 # Ingest a document

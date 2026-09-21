@@ -10,11 +10,12 @@ class RAGConfig:
     """Configuration for a :class:`~ragframework.pipeline.rag.RAGPipeline`.
 
     Attributes:
-        chunk_size: Target character length for each text chunk.
-        chunk_overlap: Number of overlapping characters between adjacent chunks.
+        chunk_size: Target character length used by chunker ``from_config`` helpers.
+        chunk_overlap: Overlap used by chunker ``from_config`` helpers.
         top_k: Number of chunks to keep after optional reranking.
-        embedding_dim: Dimensionality of embedding vectors (must match the
-            :class:`~ragframework.base.Embedder` in use).
+        embedding_dim: Optional dimensionality enforced against vectors produced by
+            the configured :class:`~ragframework.base.Embedder`. ``None`` disables
+            validation for embedders whose dimension is not known ahead of time.
         retrieve_k: Number of candidate chunks to retrieve before reranking. When None,
             the pipeline uses top_k without a reranker and top_k * 4 with one.
     """
@@ -22,7 +23,7 @@ class RAGConfig:
     chunk_size: int = 512
     chunk_overlap: int = 64
     top_k: int = 5
-    embedding_dim: int = 384
+    embedding_dim: int | None = None
     retrieve_k: int | None = None
 
     def __post_init__(self) -> None:
@@ -36,5 +37,5 @@ class RAGConfig:
             raise ValueError("top_k must be positive")
         if self.retrieve_k is not None and self.retrieve_k <= 0:
             raise ValueError("retrieve_k must be positive when set")
-        if self.embedding_dim <= 0:
+        if self.embedding_dim is not None and self.embedding_dim <= 0:
             raise ValueError("embedding_dim must be positive")
