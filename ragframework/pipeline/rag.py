@@ -166,15 +166,13 @@ class RAGPipeline:
         except Exception as exc:
             raise PipelineError(f"Query embedding failed: {exc}") from exc
 
-        retrieve_top_k = self.config.top_k if top_k is None else top_k
-        if retrieve_top_k <= 0:
+        final_top_k = self.config.top_k if top_k is None else top_k
+        if final_top_k <= 0:
             raise PipelineError("top_k must be positive")
 
-        try:
-            chunks = self.retriever.retrieve(query_embedding, top_k=retrieve_top_k)
         retrieve_k = self.config.retrieve_k
         if retrieve_k is None:
-            retrieve_k = self.config.top_k * 4 if self.reranker is not None else self.config.top_k
+            retrieve_k = final_top_k * 4 if self.reranker is not None else final_top_k
 
         try:
             chunks = self.retriever.retrieve(query_embedding, top_k=retrieve_k)
@@ -183,11 +181,11 @@ class RAGPipeline:
 
         if self.reranker is not None:
             try:
-                chunks = self.reranker.rerank(query, chunks, top_k=self.config.top_k)
+                chunks = self.reranker.rerank(query, chunks, top_k=final_top_k)
             except Exception as exc:
                 raise PipelineError(f"Reranking failed: {exc}") from exc
         else:
-            chunks = chunks[: self.config.top_k]
+            chunks = chunks[:final_top_k]
 
         try:
             answer = self.generator.generate(query, chunks)

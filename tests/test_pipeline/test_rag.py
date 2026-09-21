@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from ragframework.base import Embedder, Chunk, Generator, Reranker
+from ragframework.base import Chunk, Embedder, Generator, Reranker
 from ragframework.config import RAGConfig
 from ragframework.document.chunkers import FixedSizeChunker
 from ragframework.document.loaders import TextFileLoader
@@ -121,29 +121,11 @@ class TestRAGPipeline:
         assert "1 source" in message
         assert f"{first_count} chunks" in message
         assert len(p.retriever._chunks) == first_count
-    def test_query_with_reranker(self):
+
+    def test_query_with_reranker_uses_top_k_override_for_final_limit(self):
         class FixedRetriever(InMemoryRetriever):
             def retrieve(self, query_embedding, top_k=5):
-                return [Chunk(id="1", content="one"), Chunk(id="2", content="two")][:top_k]
-
-        p = RAGPipeline(
-            loader=TextFileLoader(),
-            chunker=FixedSizeChunker(),
-            embedder=RandomEmbedder(dim=16, seed=0),
-            retriever=FixedRetriever(),
-            generator=EchoGenerator(),
-            reranker=ReverseReranker(),
-            config=RAGConfig(top_k=1, retrieve_k=2),
-        )
-        assert p.query("test").source_chunks[0].id == "2"
-
-    def test_query_without_reranker_limits_final_context_to_top_k(self):
-        class FixedRetriever(InMemoryRetriever):
-            def retrieve(self, query_embedding, top_k=5):
-                return [
-                    Chunk(id=str(i), content=f"chunk {i}")
-                    for i in range(top_k)
-                ]
+                return [Chunk(id=str(i), content=f"chunk {i}") for i in range(top_k)]
 
         generator = RecordingGenerator()
         p = RAGPipeline(
@@ -152,14 +134,34 @@ class TestRAGPipeline:
             embedder=RandomEmbedder(dim=16, seed=0),
             retriever=FixedRetriever(),
             generator=generator,
-            config=RAGConfig(top_k=2, retrieve_k=8),
+            reranker=ReverseReranker(),
+            config=RAGConfig(top_k=3),
         )
 
-        response = p.query("test")
+        response = p.query("test", top_k=1)
 
-        assert [chunk.id for chunk in generator.context] == ["0", "1"]
-        assert [chunk.id for chunk in response.source_chunks] == ["0", "1"]
+        assert [chunk.id for chunk in generator.context] == ["3"]
+        assert [chunk.id for chunk in response.source_chunks] == ["3"]
 
+    def test_query_without_reranker_uses_top_k_override_for_final_limit(self):
+        class FixedRetriever(InMemoryRetriever):
+            def retrieve(self, query_embedding, top_k=5):
+                return [Chunk(id=str(i), content=f"chunk {i}") for i in range(top_k)]
+
+        generator = RecordingGenerator()
+        p = RAGPipeline(
+            loader=TextFileLoader(),
+            chunker=FixedSizeChunker(),
+            embedder=RandomEmbedder(dim=16, seed=0),
+            retriever=FixedRetriever(),
+            generator=generator,
+            config=RAGConfig(top_k=3, retrieve_k=8),
+        )
+
+        response = p.query("test", top_k=1)
+
+        assert [chunk.id for chunk in generator.context] == ["0"]
+        assert [chunk.id for chunk in response.source_chunks] == ["0"]
 
     def test_ingest_missing_file_raises_pipeline_error(self, pipeline):
         with pytest.raises(PipelineError):
