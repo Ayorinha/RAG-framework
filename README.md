@@ -190,7 +190,7 @@ Community contributions are the engine that drives this roadmap. Pick up a [Good
 | High | DOCX document loader | Open |
 | High | OpenAI embeddings integration | Open |
 | High | HuggingFace Sentence Transformers | Open |
-| High | OpenAI / Anthropic generator | Open |
+| High | OpenAI / Anthropic generator | In Progress |
 | Medium | FAISS vector store retriever | Open |
 | Medium | ChromaDB retriever integration | Open |
 | Medium | Semantic / recursive chunker | Open |

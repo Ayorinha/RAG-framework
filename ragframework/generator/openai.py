@@ -5,14 +5,6 @@ from __future__ import annotations
 import os
 from typing import Any
 
-try:
-    from openai import OpenAI
-except ImportError as exc:
-    raise ImportError(
-        "OpenAI support requires 'ragframework[openai]'. "
-        "Install it with: pip install ragframework[openai]"
-    ) from exc
-
 from ragframework.base import Chunk, Generator
 from ragframework.exceptions import GeneratorError
 
@@ -44,14 +36,29 @@ class OpenAIGenerator(Generator):
         ),
         max_tokens: int = 512,
     ) -> None:
+
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise ImportError(
+                "OpenAI support requires 'ragframework[openai]'. "
+                "Install it with: pip install ragframework[openai]"
+            ) from exc
+
+        resolved_api_key = (api_key or os.environ.get("OPENAI_API_KEY") or "").strip()
+
+        if not resolved_api_key:
+            raise GeneratorError(
+                "No API key provided. Pass `api_key` or set the "
+                "`OPENAI_API_KEY` environment variable."
+            )
+
         self.model = model
         self.system_prompt = system_prompt
         self.max_tokens = max_tokens
 
-        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY")
-
         try:
-            self._client = OpenAI(api_key=resolved_api_key)
+            self._client: Any = OpenAI(api_key=resolved_api_key)
         except Exception as exc:
             raise GeneratorError(f"Could not initialize OpenAI client: {exc}") from exc
 
@@ -71,10 +78,7 @@ class OpenAIGenerator(Generator):
         """
         formatted_context = self._format_context(context)
 
-        user_prompt = (
-            f"Context:\n{formatted_context}\n\n"
-            f"Question:\n{query}"
-        )
+        user_prompt = f"Context:\n{formatted_context}\n\nQuestion:\n{query}"
 
         try:
             response: Any = self._client.chat.completions.create(
@@ -105,6 +109,5 @@ class OpenAIGenerator(Generator):
             return "No context was retrieved."
 
         return "\n\n".join(
-            f"[Chunk {index}]\n{chunk.content}"
-            for index, chunk in enumerate(context, start=1)
+            f"[Chunk {index}]\n{chunk.content}" for index, chunk in enumerate(context, start=1)
         )
