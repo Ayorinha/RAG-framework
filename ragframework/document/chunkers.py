@@ -66,11 +66,11 @@ class SentenceChunker(TextChunker):
     """
 
     def __init__(
-    self,
-    max_sentences: int = 5,
-    overlap_sentences: int = 1,
-    max_chars: int | None = None,
-) -> None:
+        self,
+        max_sentences: int = 5,
+        overlap_sentences: int = 1,
+        max_chars: int | None = None,
+    ) -> None:
         if overlap_sentences >= max_sentences:
             raise ValueError("overlap_sentences must be less than max_sentences")
         if max_chars is not None and max_chars <= 0:
@@ -107,7 +107,7 @@ class SentenceChunker(TextChunker):
         chunks = []
         chunk_num = 0
 
-    # Preserve the original behavior when max_chars is not set.
+        # Preserve the original behavior when max_chars is not set.
         if self.max_chars is None:
             step = self.max_sentences - self.overlap_sentences
             for index in range(0, len(sentences), step):
@@ -128,7 +128,7 @@ class SentenceChunker(TextChunker):
 
             return chunks
 
-    # Character-limited behavior.
+        # Character-limited behavior.
         index = 0
 
         while index < len(sentences):
@@ -150,11 +150,7 @@ class SentenceChunker(TextChunker):
 
                 separator_length = 1 if window else 0
 
-                if (
-                    window
-                    and current_length + separator_length + sentence_length
-                    > self.max_chars
-                ):
+                if window and current_length + separator_length + sentence_length > self.max_chars:
                     closed_early = True
                     break
 
@@ -177,9 +173,7 @@ class SentenceChunker(TextChunker):
                 chunk_num += 1
 
             if oversized_index is not None:
-                pieces = self._split_long_sentence(
-                    sentences[oversized_index]
-                )
+                pieces = self._split_long_sentence(sentences[oversized_index])
 
                 for piece in pieces:
                     chunks.append(
@@ -197,7 +191,7 @@ class SentenceChunker(TextChunker):
                 index = oversized_index + 1
 
             elif closed_early:
-                index += len(window)
+                index = max(index + 1, index + len(window) - self.overlap_sentences)
 
             else:
                 index += self.max_sentences - self.overlap_sentences

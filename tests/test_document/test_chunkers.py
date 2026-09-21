@@ -107,6 +107,27 @@ class TestSentenceChunker:
 
         assert all(len(chunk.content) <= 20 for chunk in chunks)
 
+    def test_max_chars_preserves_overlap_when_closing_early(self):
+        doc = Document(
+            id="overlap",
+            content="Aaa. Bbb. Ccc. Ddd.",
+            metadata={},
+        )
+
+        chunker = SentenceChunker(
+            max_sentences=5,
+            overlap_sentences=1,
+            max_chars=9,
+        )
+
+        chunks = chunker.chunk(doc)
+
+        assert [chunk.content for chunk in chunks] == [
+            "Aaa. Bbb.",
+            "Bbb. Ccc.",
+            "Ccc. Ddd.",
+        ]
+
 
 class TestRecursiveChunker:
     def test_empty_doc(self):
