@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
 - `CSVLoader` and `JSONLLoader` for loading selected record fields into documents with configurable IDs, metadata, encoding, and row/line-specific errors, using only the standard library (closes #36).
 ### Fixed
 - `InMemoryRetriever` now raises `RetrieverError` for invalid vectors and dimension mismatches, validates complete batches before updating stored data, and treats empty batches as a no-op. Vector validation and normalization are shared with `FAISSRetriever` (closes #26).
@@ -20,8 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ChromaRetriever` for ephemeral and persistent ChromaDB-backed vector retrieval (closes #5)
 - `FAISSRetriever` for approximate cosine-similarity search with an HNSW index (closes #4)
 - `HuggingFaceEmbedder` for local embeddings with Sentence Transformers (closes #7)
-- `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
-<<<<<<< HEAD
 - `RecursiveChunker` for semantics-preserving text splitting (closes #3)
 - `PDFLoader` with support for per-page and whole-file modes (closes #1)
 - `AsyncRAGPipeline` for asynchronous RAG ingestion and querying using `asyncio.to_thread()` (closes #9)
@@ -35,10 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Releases are published to PyPI via GitHub Actions trusted publishing (see `RELEASING.md`)
 
 =======
-- `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
-- RecursiveChunker for semantics-preserving text splitting (closes #3)
-- PDFLoader with support for per-page and whole-file modes (closes #1)
->>>>>>> d2dface (feat: add OpenAI LLM generator)
 ## [0.1.0] - 2026-03-24
 
 ### Added
