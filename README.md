@@ -133,6 +133,38 @@ for chunk in response.source_chunks:
     print(f"  Source: {chunk.metadata.get('source')} — {chunk.content[:80]}…")
 ```
 
+### Loading CSV and JSON Lines
+
+The built-in tabular loaders need no additional dependencies. Each CSV data row
+or JSON Lines object becomes a separate document:
+
+```python
+from ragframework.document import CSVLoader, JSONLLoader
+
+csv_loader = CSVLoader(
+    content_columns=["title", "body"],
+    metadata_columns=["url", "date"],
+    id_column="id",
+)
+documents = csv_loader.load("articles.csv")
+
+jsonl_loader = JSONLLoader(content_key="text", metadata_keys=["source"], id_key="id")
+documents = jsonl_loader.load("articles.jsonl")
+```
+
+Content fields are joined with `separator="\n"`; JSONL also accepts a list of
+content keys. Both loaders accept `encoding`, and CSV accepts `delimiter`.
+Without an explicit ID field, IDs use the source path hash and zero-based row
+index. Metadata contains the file `source`, a reserved zero-based `row_index`,
+and only the selected metadata fields. Selecting a metadata field named `source`
+replaces the file path with that field's value.
+
+CSV errors identify one-based data rows (excluding the header); malformed JSON
+or missing keys identify one-based lines. JSONL requires string content and
+string or integer IDs, preserves the types of selected metadata values, and
+rejects blank lines and non-object records with `LoaderError`. Empty files
+return no documents.
+
 ### Implementing your own component
 
 ```python
