@@ -213,7 +213,7 @@ class RAGPipeline:
 
         final_top_k = self.config.top_k if top_k is None else top_k
         if final_top_k <= 0:
-            raise PipelineError("top_k must be positive")        
+            raise PipelineError("top_k must be positive")
 
         retrieve_k = self.config.retrieve_k
         if retrieve_k is None:
