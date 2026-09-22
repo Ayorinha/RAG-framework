@@ -210,7 +210,7 @@ class RAGPipeline:
             raise PipelineError(f"Query embedding failed: {exc}") from exc
 
         self._validate_embedding_dimension(query_embedding)
-        
+
         final_top_k = self.config.top_k if top_k is None else top_k
         if final_top_k <= 0:
             raise PipelineError("top_k must be positive")        
