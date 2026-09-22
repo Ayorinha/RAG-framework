@@ -14,6 +14,7 @@ from ragframework.exceptions import LoaderError
 from ragframework.utils.text import normalize_whitespace
 
 _IGNORED_TAGS = {"head", "nav", "noscript", "script", "style", "template"}
+_NON_DOCUMENT_TITLE_TAGS = (_IGNORED_TAGS - {"head"}) | {"svg", "math"}
 _HEAD_TAGS = {
     "base",
     "link",
@@ -89,28 +90,57 @@ class _TextParser(HTMLParser):
         self.text: list[str] = []
         self.title: list[str] = []
         self._tags: list[str] = []
+        self._positions: dict[str, list[int]] = {}
+        self._title_seen = False
+        self._capture_title = False
+
+    def _is_ignored(self) -> bool:
+        return any(tag in self._positions for tag in _IGNORED_TAGS)
+
+    def _close_from(self, index: int) -> None:
+        # Each open tag is removed once, including implicitly closed children.
+        for tag in reversed(self._tags[index:]):
+            positions = self._positions[tag]
+            positions.pop()
+            if not positions:
+                del self._positions[tag]
+        del self._tags[index:]
+        if "title" not in self._positions:
+            self._capture_title = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         # Both </head> and <body> may be omitted before the first body element.
         if self._tags and self._tags[-1] == "head" and tag not in _HEAD_TAGS:
-            self._tags.pop()
-        if tag in _BLOCK_TAGS and not _IGNORED_TAGS.intersection(self._tags):
+            self._close_from(len(self._tags) - 1)
+        if tag in _BLOCK_TAGS and not self._is_ignored():
             self.text.append(" ")
+        if tag == "title":
+            self._capture_title = not self._title_seen and not any(
+                ancestor in self._positions for ancestor in _NON_DOCUMENT_TITLE_TAGS
+            )
+            if self._capture_title:
+                self._title_seen = True
         if tag not in _VOID_TAGS:
+            self._positions.setdefault(tag, []).append(len(self._tags))
             self._tags.append(tag)
 
     def handle_endtag(self, tag: str) -> None:
-        if tag in self._tags:
-            index = len(self._tags) - 1 - self._tags[::-1].index(tag)
-            del self._tags[index:]
-        if tag in _BLOCK_TAGS and not _IGNORED_TAGS.intersection(self._tags):
+        positions = self._positions.get(tag)
+        if positions:
+            self._close_from(positions[-1])
+        if tag in _BLOCK_TAGS and not self._is_ignored():
             self.text.append(" ")
 
     def handle_data(self, data: str) -> None:
-        ignored = _IGNORED_TAGS.intersection(self._tags)
-        if "title" in self._tags and not (ignored - {"head"}):
+        # Non-whitespace text also implicitly ends head. HTML whitespace does
+        # not include NBSP or other Unicode whitespace recognized by str.strip.
+        if self._tags and self._tags[-1] == "head" and data.strip(" \t\n\f\r"):
+            self._close_from(len(self._tags) - 1)
+        if self._capture_title and not any(
+            tag in self._positions for tag in _NON_DOCUMENT_TITLE_TAGS
+        ):
             self.title.append(data)
-        elif "title" not in self._tags and not ignored:
+        elif "title" not in self._positions and not self._is_ignored():
             self.text.append(data)
 
 
@@ -119,7 +149,8 @@ class HTMLLoader(DocumentLoader):
 
     Uses the standard-library HTML parser, without JavaScript execution.
     Script, style, navigation, noscript, template, and head content is omitted;
-    the page title is retained separately in metadata. Block boundaries become
+    the first document title is retained separately in metadata (excluding SVG
+    and MathML titles). Block boundaries become
     spaces, inline text is preserved, and whitespace is collapsed.
 
     Args:

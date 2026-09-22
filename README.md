@@ -180,7 +180,8 @@ documents = loader.load("saved-page.html")
 
 Each source produces one document with `source`, `title`, and `format="html"`
 metadata. The loader omits scripts, styles, navigation, templates, noscript, and
-head text while preserving the page title separately. It collapses whitespace
+head text while preserving the first document title separately, excluding SVG
+and MathML titles. It collapses whitespace
 and separates block elements without breaking inline words or punctuation.
 It reads static HTML and does not execute JavaScript. Local files default to
 UTF-8 (`encoding` is configurable); HTTP responses use their declared charset
