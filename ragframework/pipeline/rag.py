@@ -15,6 +15,7 @@ from ragframework.base import (
     TextChunker,
 )
 from ragframework.config import RAGConfig
+from ragframework.document.chunkers import FixedSizeChunker
 from ragframework.exceptions import PipelineError
 
 
@@ -71,6 +72,45 @@ class RAGPipeline:
         self.config = config or RAGConfig()
         self.reranker = reranker
 
+    @classmethod
+    def from_config(
+        cls,
+        config: RAGConfig,
+        *,
+        loader: DocumentLoader,
+        embedder: Embedder,
+        retriever: Retriever,
+        generator: Generator,
+        reranker: Reranker | None = None,
+        chunker_cls: type[FixedSizeChunker] = FixedSizeChunker,
+    ) -> RAGPipeline:
+        """Build a pipeline whose chunker consumes ``config`` chunk settings.
+
+        Passing components directly to :class:`RAGPipeline` remains supported for
+        callers that need to configure a chunker independently.
+        """
+        return cls(
+            loader=loader,
+            chunker=chunker_cls.from_config(config),
+            embedder=embedder,
+            retriever=retriever,
+            generator=generator,
+            config=config,
+            reranker=reranker,
+        )
+
+    def _validate_embedding_dimension(self, embedding: list[float]) -> None:
+        expected = self.config.embedding_dim
+        if expected is None:
+            return
+
+        actual = len(embedding)
+        if actual != expected:
+            raise PipelineError(
+                f"Embedder produced {actual}-dim vectors but "
+                f"RAGConfig.embedding_dim is {expected}"
+            )
+
     def ingest(self, source: str) -> int:
         """Load, chunk, embed, and index a document.
 
@@ -104,6 +144,9 @@ class RAGPipeline:
             embeddings = self.embedder.embed(texts)
         except Exception as exc:
             raise PipelineError(f"Embedding failed: {exc}") from exc
+
+        for embedding in embeddings:
+            self._validate_embedding_dimension(embedding)
 
         for chunk, emb in zip(all_chunks, embeddings, strict=True):
             chunk.embedding = emb
@@ -166,9 +209,11 @@ class RAGPipeline:
         except Exception as exc:
             raise PipelineError(f"Query embedding failed: {exc}") from exc
 
+        self._validate_embedding_dimension(query_embedding)
+        
         final_top_k = self.config.top_k if top_k is None else top_k
         if final_top_k <= 0:
-            raise PipelineError("top_k must be positive")
+            raise PipelineError("top_k must be positive")        
 
         retrieve_k = self.config.retrieve_k
         if retrieve_k is None:

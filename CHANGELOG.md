@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
+- `CSVLoader` and `JSONLLoader` for loading selected record fields into documents with configurable IDs, metadata, encoding, and row/line-specific errors, using only the standard library (closes #36).
+### Fixed
+- `InMemoryRetriever` now raises `RetrieverError` for invalid vectors and dimension mismatches, validates complete batches before updating stored data, and treats empty batches as a no-op. Vector validation and normalization are shared with `FAISSRetriever` (closes #26).
+
 ## [0.2.0] - 2026-09-19
 
 ### Added
@@ -21,10 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PDFLoader` with support for per-page and whole-file modes (closes #1)
 - `AsyncRAGPipeline` for asynchronous RAG ingestion and querying using `asyncio.to_thread()` (closes #9)
 
+### Fixed
+- Validate configured embedding dimensions during ingestion and querying (closes #29)
+
 ### Changed
+- Make `embedding_dim` validation opt-in and add `RAGPipeline.from_config()` for chunk settings
 - License metadata now uses an SPDX expression (`license = "MIT"`) in `pyproject.toml`
 - Releases are published to PyPI via GitHub Actions trusted publishing (see `RELEASING.md`)
 
+=======
 ## [0.1.0] - 2026-03-24
 
 ### Added
