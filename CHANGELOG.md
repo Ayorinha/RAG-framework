@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `RAGPipeline.ingest_many()` for ingesting multiple sources and returning the total chunk count (closes #43)
+- Per-call `RAGPipeline.query(..., top_k=...)` overrides and `RAGResponse.query` metadata (closes #43)
 - `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
 - `CSVLoader` and `JSONLLoader` for loading selected record fields into documents with configurable IDs, metadata, encoding, and row/line-specific errors, using only the standard library (closes #36).
 ### Fixed
