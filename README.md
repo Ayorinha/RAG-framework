@@ -165,6 +165,28 @@ string or integer IDs, preserves the types of selected metadata values, and
 rejects blank lines and non-object records with `LoaderError`. Empty files
 return no documents.
 
+### Loading HTML files and pages
+
+`HTMLLoader` uses Python's standard library and needs no additional dependencies:
+
+```python
+from ragframework.document import HTMLLoader
+
+loader = HTMLLoader(timeout=10.0, user_agent="my-rag-app/1.0")
+documents = loader.load("saved-page.html")
+# The same loader accepts an HTTP(S) URL:
+# documents = loader.load("https://example.com/article")
+```
+
+Each source produces one document with `source`, `title`, and `format="html"`
+metadata. The loader omits scripts, styles, navigation, templates, noscript, and
+head text while preserving the page title separately. It collapses whitespace
+and separates block elements without breaking inline words or punctuation.
+It reads static HTML and does not execute JavaScript. Local files default to
+UTF-8 (`encoding` is configurable); HTTP responses use their declared charset
+or fall back to that encoding. File, network, and decoding failures raise
+`LoaderError`. A page without readable text produces a document with empty content.
+
 ### Implementing your own component
 
 ```python
