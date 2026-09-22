@@ -102,7 +102,6 @@ class TestRAGPipeline:
         assert [chunk.id for chunk in generator.context] == ["0", "1"]
         assert [chunk.id for chunk in response.source_chunks] == ["0", "1"]
 
-
     def test_ingest_missing_file_raises_pipeline_error(self, pipeline):
         with pytest.raises(PipelineError):
             pipeline.ingest("/no/such/file.txt")
@@ -213,3 +212,32 @@ class TestRAGPipeline:
         )
 
         assert p.reranker is reranker
+
+    def test_ingest_embeds_in_configured_batches(self, tmp_path):
+        source = tmp_path / "many.txt"
+        source.write_text("word " * 80)
+
+        class RecordingEmbedder(Embedder):
+            def __init__(self):
+                self.call_sizes: list[int] = []
+
+            def embed(self, texts):
+                self.call_sizes.append(len(texts))
+                return [[1.0] + [0.0] * 7 for _ in texts]
+
+        embedder = RecordingEmbedder()
+        chunker = FixedSizeChunker(chunk_size=10, chunk_overlap=0)
+        p = RAGPipeline(
+            loader=TextFileLoader(),
+            chunker=chunker,
+            embedder=embedder,
+            retriever=InMemoryRetriever(),
+            generator=EchoGenerator(),
+            config=RAGConfig(embed_batch_size=5),
+        )
+
+        count = p.ingest(str(source))
+        assert count > 0
+        assert all(size <= 5 for size in embedder.call_sizes)
+        assert sum(embedder.call_sizes) == count
+        assert embedder.call_sizes == [5] * (count // 5) + ([count % 5] if count % 5 else [])
