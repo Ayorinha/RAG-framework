@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `RAGConfig.embed_batch_size` so `RAGPipeline.ingest()` embeds chunks in bounded batches (closes #42)
 - `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
 - `CSVLoader` and `JSONLLoader` for loading selected record fields into documents with configurable IDs, metadata, encoding, and row/line-specific errors, using only the standard library (closes #36).
 ### Fixed
@@ -33,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License metadata now uses an SPDX expression (`license = "MIT"`) in `pyproject.toml`
 - Releases are published to PyPI via GitHub Actions trusted publishing (see `RELEASING.md`)
 
-=======
+======
 ## [0.1.0] - 2026-03-24
 
 ### Added
