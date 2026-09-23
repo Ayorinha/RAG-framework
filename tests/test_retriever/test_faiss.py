@@ -34,8 +34,10 @@ def test_real_faiss_search_uses_cosine_similarity_and_preserves_chunks() -> None
     retriever.add([east, north, northeast])
     results = retriever.retrieve([2.0, 0.0], top_k=3)
 
-    assert results == [north, northeast, east]
-    assert results[0] is north
+    assert [chunk.id for chunk in results] == [north.id, northeast.id, east.id]
+    assert results[0] is not north
+    assert results[0].score == pytest.approx(1.0)
+    assert north.score is None
     assert results[0].content == "Content north"
     assert results[0].metadata == {"source": "north"}
 
@@ -48,7 +50,9 @@ def test_batches_append_without_replacing_existing_chunks() -> None:
     retriever.add([second])
 
     assert len(retriever) == 2
-    assert retriever.retrieve([0.0, 1.0, 0.0], top_k=2)[0] is second
+    result = retriever.retrieve([0.0, 1.0, 0.0], top_k=2)[0]
+    assert result.id == second.id
+    assert result.score == pytest.approx(1.0)
 
 
 def test_hnsw_index_uses_configured_parameters_and_inner_product() -> None:
@@ -79,7 +83,8 @@ def test_non_positive_top_k_returns_empty(top_k: int) -> None:
 def test_top_k_is_limited_to_index_size() -> None:
     retriever = FAISSRetriever()
     retriever.add([make_chunk("one", [1.0, 0.0])])
-    assert retriever.retrieve([1.0, 0.0], top_k=20) == [retriever._chunks[0]]
+    result = retriever.retrieve([1.0, 0.0], top_k=20)
+    assert [chunk.id for chunk in result] == [retriever._chunks[0].id]
 
 
 @pytest.mark.parametrize("top_k", [1.5, True])
@@ -160,7 +165,9 @@ def test_invalid_faiss_labels_are_ignored(monkeypatch: pytest.MonkeyPatch) -> No
             np.array([[0, -1, 999]], dtype=np.int64),
         ),
     )
-    assert retriever.retrieve([1.0, 0.0]) == [chunk]
+    result = retriever.retrieve([1.0, 0.0])
+    assert [item.id for item in result] == [chunk.id]
+    assert result[0].score == pytest.approx(1.0)
 
 
 def test_faiss_search_failure_is_wrapped(monkeypatch: pytest.MonkeyPatch) -> None:
