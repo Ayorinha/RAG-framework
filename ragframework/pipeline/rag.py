@@ -227,6 +227,14 @@ class RAGPipeline:
         except Exception as exc:
             raise PipelineError(f"Retrieval failed: {exc}") from exc
 
+        if self.config.score_threshold is not None:
+            threshold = self.config.score_threshold
+            chunks = [
+                chunk
+                for chunk in chunks
+                if chunk.score is None or chunk.score >= threshold
+            ]
+
         if self.reranker is not None:
             try:
                 chunks = self.reranker.rerank(query, chunks, top_k=final_top_k)
