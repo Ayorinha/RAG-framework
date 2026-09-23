@@ -3,12 +3,12 @@
 [![PyPI version](https://img.shields.io/pypi/v/ragframework.svg)](https://pypi.org/project/ragframework/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/adaumsilva/RAG-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/adaumsilva/RAG-framework/actions/workflows/ci.yml)
+[![CI](https://github.com/Ayorinha/RAG-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Ayorinha/RAG-framework/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/adaumsilva/RAG-framework/branch/main/graph/badge.svg)](https://codecov.io/gh/adaumsilva/RAG-framework)
-[![GitHub issues](https://img.shields.io/github/issues/adaumsilva/RAG-framework)](https://github.com/adaumsilva/RAG-framework/issues)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/adaumsilva/RAG-framework/blob/main/CONTRIBUTING.md)
-[![GitHub contributors](https://img.shields.io/github/contributors/adaumsilva/RAG-framework)](https://github.com/adaumsilva/RAG-framework/graphs/contributors)
-[![GitHub stars](https://img.shields.io/github/stars/adaumsilva/RAG-framework?style=social)](https://github.com/adaumsilva/RAG-framework/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/adaumsilva/RAG-framework)](https://github.com/Ayorinha/RAG-framework/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Ayorinha/RAG-framework/blob/main/CONTRIBUTING.md)
+[![GitHub contributors](https://img.shields.io/github/contributors/adaumsilva/RAG-framework)](https://github.com/Ayorinha/RAG-framework/graphs/contributors)
+[![GitHub stars](https://img.shields.io/github/stars/adaumsilva/RAG-framework?style=social)](https://github.com/Ayorinha/RAG-framework/stargazers)
 
 A modular, extensible Python framework for building **Retrieval-Augmented Generation (RAG)** pipelines. Plug in your own loaders, embedders, vector stores, and generators — or use the built-in implementations to get started in minutes.
 
