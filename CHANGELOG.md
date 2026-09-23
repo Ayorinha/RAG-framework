@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
 - `CSVLoader` and `JSONLLoader` for loading selected record fields into documents with configurable IDs, metadata, encoding, and row/line-specific errors, using only the standard library (closes #36).
 ### Fixed
+- Enforce LF line endings with `.gitattributes` across platforms while keeping PNG files binary (closes #48).
 - `InMemoryRetriever` now raises `RetrieverError` for invalid vectors and dimension mismatches, validates complete batches before updating stored data, and treats empty batches as a no-op. Vector validation and normalization are shared with `FAISSRetriever` (closes #26).
 
 ## [0.2.0] - 2026-09-19
