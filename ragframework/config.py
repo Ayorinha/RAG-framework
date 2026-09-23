@@ -21,6 +21,8 @@ class RAGConfig:
         embed_batch_size: Maximum number of texts passed to ``embedder.embed()`` in a
             single call during ingestion. Hosted APIs and local models both have
             practical batch limits; values must be greater than zero.
+        score_threshold: Optional minimum similarity score for retrieved chunks.
+            Scored chunks below the threshold are excluded before reranking or generation.
     """
 
     chunk_size: int = 512
@@ -29,6 +31,7 @@ class RAGConfig:
     embedding_dim: int | None = None
     retrieve_k: int | None = None
     embed_batch_size: int = 64
+    score_threshold: float | None = None
 
     def __post_init__(self) -> None:
         if self.chunk_size <= 0:
@@ -45,3 +48,5 @@ class RAGConfig:
             raise ValueError("embedding_dim must be positive")
         if self.embed_batch_size <= 0:
             raise ValueError("embed_batch_size must be positive")
+        if self.score_threshold is not None and not -1.0 <= self.score_threshold <= 1.0:
+            raise ValueError("score_threshold must be between -1 and 1")
