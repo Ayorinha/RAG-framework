@@ -120,7 +120,7 @@ class ChromaRetriever(Retriever):
 
         chunks_result: list[Chunk] = []
 
-        for chunk_id, document, metadata in zip(
+        for chunk_id, document, metadata, distance in zip(
             ids,
             documents,
             metadatas,
