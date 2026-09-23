@@ -57,10 +57,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/adaumsilva/RAG-framework"
-Repository = "https://github.com/adaumsilva/RAG-framework"
-Issues = "https://github.com/adaumsilva/RAG-framework/issues"
-Changelog = "https://github.com/adaumsilva/RAG-framework/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Ayorinha/RAG-framework"
+Repository = "https://github.com/Ayorinha/RAG-framework"
+Issues = "https://github.com/Ayorinha/RAG-framework/issues"
+Changelog = "https://github.com/Ayorinha/RAG-framework/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
