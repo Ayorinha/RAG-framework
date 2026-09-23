@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - PEP 561 `py.typed` marker in source distributions and wheels so downstream type checkers can use the package's annotations (closes #47).
+- Add an optional `max_chars` limit to `SentenceChunker`.
+- `RAGConfig.embed_batch_size` so `RAGPipeline.ingest()` embeds chunks in bounded batches (closes #42)
+- `RAGPipeline.ingest_many()` for ingesting multiple sources and returning the total chunk count (closes #43)
+- Per-call `RAGPipeline.query(..., top_k=...)` overrides and `RAGResponse.query` metadata (closes #43)
 - `OpenAIGenerator` for OpenAI-powered grounded answer generation (closes #8)
 - `CSVLoader` and `JSONLLoader` for loading selected record fields into documents with configurable IDs, metadata, encoding, and row/line-specific errors, using only the standard library (closes #36).
 ### Fixed
@@ -34,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License metadata now uses an SPDX expression (`license = "MIT"`) in `pyproject.toml`
 - Releases are published to PyPI via GitHub Actions trusted publishing (see `RELEASING.md`)
 
-=======
+======
 ## [0.1.0] - 2026-03-24
 
 ### Added
