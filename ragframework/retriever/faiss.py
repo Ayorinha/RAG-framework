@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -120,12 +121,14 @@ class FAISSRetriever(Retriever):
 
         count = min(top_k, len(self._chunks))
         try:
-            _scores, labels = self._index.search(query.reshape(1, -1), count)
+            scores, labels = self._index.search(query.reshape(1, -1), count)
         except Exception as exc:
             raise RetrieverError("FAISS failed to search the index.") from exc
 
         return [
-            self._chunks[int(label)] for label in labels[0] if 0 <= int(label) < len(self._chunks)
+            replace(self._chunks[int(label)], score=float(score))
+            for score, label in zip(scores[0], labels[0], strict=True)
+            if 0 <= int(label) < len(self._chunks)
         ]
 
     def __len__(self) -> int:
