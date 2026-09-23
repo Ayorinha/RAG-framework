@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from ragframework.base import (
     Chunk,
     DocumentLoader,
@@ -159,11 +161,44 @@ class RAGPipeline:
 
         return len(all_chunks)
 
-    def query(self, query: str) -> RAGResponse:
+    def ingest_many(self, sources: Iterable[str]) -> int:
+        """Ingest multiple sources and return the total chunk count.
+
+        Each source is passed through :meth:`ingest` in order. If ingestion of a
+        source fails, the raised :class:`~ragframework.exceptions.PipelineError`
+        identifies that source and reports how many earlier sources and chunks
+        were successfully indexed.
+
+        Args:
+            sources: Paths, URLs, or identifiers passed to the configured loader.
+
+        Returns:
+            The total number of chunks added to the retriever.
+
+        Raises:
+            :class:`~ragframework.exceptions.PipelineError`: If any source fails.
+        """
+        total_chunks = 0
+
+        for successful_sources, source in enumerate(sources):
+            try:
+                total_chunks += self.ingest(source)
+            except Exception as exc:
+                source_label = "source" if successful_sources == 1 else "sources"
+                chunk_label = "chunk" if total_chunks == 1 else "chunks"
+                raise PipelineError(
+                    f"Ingest failed for '{source}' after {successful_sources} "
+                    f"{source_label} and {total_chunks} {chunk_label} succeeded: {exc}"
+                ) from exc
+
+        return total_chunks
+
+    def query(self, query: str, *, top_k: int | None = None) -> RAGResponse:
         """Retrieve relevant chunks and generate an answer.
 
         Args:
             query: The user's question.
+            top_k: Optional per-call override for the number of chunks to retrieve.
 
         Returns:
             A :class:`~ragframework.base.RAGResponse` with the answer and
@@ -179,9 +214,13 @@ class RAGPipeline:
 
         self._validate_embedding_dimension(query_embedding)
 
+        final_top_k = self.config.top_k if top_k is None else top_k
+        if final_top_k <= 0:
+            raise PipelineError("top_k must be positive")
+
         retrieve_k = self.config.retrieve_k
         if retrieve_k is None:
-            retrieve_k = self.config.top_k * 4 if self.reranker is not None else self.config.top_k
+            retrieve_k = final_top_k * 4 if self.reranker is not None else final_top_k
 
         try:
             chunks = self.retriever.retrieve(query_embedding, top_k=retrieve_k)
@@ -190,15 +229,15 @@ class RAGPipeline:
 
         if self.reranker is not None:
             try:
-                chunks = self.reranker.rerank(query, chunks, top_k=self.config.top_k)
+                chunks = self.reranker.rerank(query, chunks, top_k=final_top_k)
             except Exception as exc:
                 raise PipelineError(f"Reranking failed: {exc}") from exc
         else:
-            chunks = chunks[: self.config.top_k]
+            chunks = chunks[:final_top_k]
 
         try:
             answer = self.generator.generate(query, chunks)
         except Exception as exc:
             raise PipelineError(f"Generation failed: {exc}") from exc
 
-        return RAGResponse(answer=answer, source_chunks=chunks)
+        return RAGResponse(answer=answer, source_chunks=chunks, query=query)
