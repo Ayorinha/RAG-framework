@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -75,7 +76,7 @@ class InMemoryRetriever(Retriever):
         k = min(top_k, len(self._chunks))
         top_indices = np.argpartition(scores, -k)[-k:]
         top_indices = top_indices[np.argsort(scores[top_indices])[::-1]]
-        return [self._chunks[i] for i in top_indices]
+        return [replace(self._chunks[i], score=float(scores[i])) for i in top_indices]
 
     def __len__(self) -> int:
         return len(self._chunks)
