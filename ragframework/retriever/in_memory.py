@@ -65,7 +65,9 @@ class InMemoryRetriever(Retriever):
 
         Invalid query vectors or dimensions raise ``RetrieverError``.
         """
-        if not self._chunks or self._matrix is None:
+        if not isinstance(top_k, int) or isinstance(top_k, bool):
+            raise RetrieverError("top_k must be an integer.")
+        if top_k <= 0 or not self._chunks or self._matrix is None:
             return []
         q = validate_vector(query_embedding, "Query embedding")
         if q.shape[0] != self._dimension:
