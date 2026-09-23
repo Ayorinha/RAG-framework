@@ -13,6 +13,7 @@ def test_defaults():
     assert cfg.embedding_dim is None
     assert cfg.retrieve_k is None
     assert cfg.embed_batch_size == 64
+    assert cfg.score_threshold is None
 
 
 def test_custom_values():
@@ -56,6 +57,18 @@ def test_invalid_embedding_dim():
 def test_invalid_retrieve_k():
     with pytest.raises(ValueError, match="retrieve_k"):
         RAGConfig(retrieve_k=0)
+
+
+def test_score_threshold_accepts_boundaries():
+    assert RAGConfig(score_threshold=-1.0).score_threshold == -1.0
+    assert RAGConfig(score_threshold=1.0).score_threshold == 1.0
+
+
+def test_invalid_score_threshold():
+    with pytest.raises(ValueError, match="score_threshold"):
+        RAGConfig(score_threshold=-1.01)
+    with pytest.raises(ValueError, match="score_threshold"):
+        RAGConfig(score_threshold=1.01)
 
 
 def test_invalid_embed_batch_size():
