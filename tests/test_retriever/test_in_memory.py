@@ -84,7 +84,11 @@ class TestInMemoryRetriever:
             r.add([make_chunk("good", [0.0, 1.0]), make_chunk("bad", embedding)])
 
         assert len(r) == int(populated)
-        assert r.retrieve([1.0, 0.0]) == ([existing] if populated else [])
+        results = r.retrieve([1.0, 0.0])
+        assert [chunk.id for chunk in results] == ([existing.id] if populated else [])
+        if populated:
+            assert results[0].score == pytest.approx(1.0)
+            assert existing.score is None
         # A failed first batch must not establish the index dimension.
         recovered = make_chunk("recovered", [0.0, 2.0] if populated else [0.0, 2.0, 0.0])
         r.add([recovered])
@@ -103,7 +107,10 @@ class TestInMemoryRetriever:
         assert r.retrieve([1.0, 0.0]) == []
         recovered = make_chunk("recovered", [1.0, 0.0, 0.0])
         r.add([recovered])
-        assert r.retrieve([1.0, 0.0, 0.0]) == [recovered]
+        results = r.retrieve([1.0, 0.0, 0.0])
+        assert results[0].id == recovered.id
+        assert results[0].score == pytest.approx(1.0)
+        assert recovered.score is None
 
     def test_wrong_dimension_append_preserves_existing_results(self):
         r = InMemoryRetriever()
