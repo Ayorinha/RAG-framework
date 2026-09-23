@@ -185,8 +185,7 @@ class TestRAGPipeline:
         assert [chunk.id for chunk in reranker.seen] == ["boundary", "high"]
         assert [chunk.id for chunk in response.source_chunks] == ["boundary", "high"]
 
-
-def test_score_threshold_keeps_unscored_custom_retriever_results(self):
+    def test_score_threshold_keeps_unscored_custom_retriever_results(self):
         class FixedRetriever(InMemoryRetriever):
             def retrieve(self, query_embedding, top_k=5):
                 return [Chunk(id="unscored", content="custom")]
@@ -203,8 +202,7 @@ def test_score_threshold_keeps_unscored_custom_retriever_results(self):
         response = p.query("test")
         assert [chunk.id for chunk in response.source_chunks] == ["unscored"]
 
-
-def test_query_without_reranker_uses_top_k_override_for_final_limit(self):
+    def test_query_without_reranker_uses_top_k_override_for_final_limit(self):
         class FixedRetriever(InMemoryRetriever):
             def retrieve(self, query_embedding, top_k=5):
                 return [Chunk(id=str(i), content=f"chunk {i}") for i in range(top_k)]
