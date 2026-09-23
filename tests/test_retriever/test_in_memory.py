@@ -29,6 +29,20 @@ class TestInMemoryRetriever:
         results = r.retrieve(query, top_k=2)
         assert len(results) <= 2
 
+
+    @pytest.mark.parametrize("top_k", [0, -1])
+    def test_non_positive_top_k_returns_empty(self, top_k: int):
+        r = InMemoryRetriever()
+        r.add([make_chunk("one", [1.0])])
+        assert r.retrieve([1.0], top_k=top_k) == []
+
+    @pytest.mark.parametrize("top_k", [1.5, True])
+    def test_top_k_must_be_an_integer(self, top_k: object):
+        r = InMemoryRetriever()
+        r.add([make_chunk("one", [1.0])])
+        with pytest.raises(RetrieverError, match="top_k must be an integer"):
+            r.retrieve([1.0], top_k=top_k)  # type: ignore[arg-type]
+
     def test_chunk_without_embedding_raises(self):
         r = InMemoryRetriever()
         bad_chunk = Chunk(id="bad", content="no embedding")
