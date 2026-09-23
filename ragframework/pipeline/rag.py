@@ -139,9 +139,12 @@ class RAGPipeline:
         if not all_chunks:
             return 0
 
-        texts = [c.content for c in all_chunks]
+        batch_size = self.config.embed_batch_size
+        embeddings: list[list[float]] = []
         try:
-            embeddings = self.embedder.embed(texts)
+            for start in range(0, len(all_chunks), batch_size):
+                batch = all_chunks[start : start + batch_size]
+                embeddings.extend(self.embedder.embed([c.content for c in batch]))
         except Exception as exc:
             raise PipelineError(f"Embedding failed: {exc}") from exc
 
