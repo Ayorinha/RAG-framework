@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/Ayorinha/RAG-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Ayorinha/RAG-framework/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/adaumsilva/RAG-framework/branch/main/graph/badge.svg)](https://codecov.io/gh/adaumsilva/RAG-framework)
+[![codecov](https://codecov.io/gh/Ayorinha/RAG-framework/branch/main/graph/badge.svg)](https://codecov.io/gh/Ayorinha/RAG-framework)
 [![GitHub issues](https://img.shields.io/github/issues/adaumsilva/RAG-framework)](https://github.com/Ayorinha/RAG-framework/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Ayorinha/RAG-framework/blob/main/CONTRIBUTING.md)
 [![GitHub contributors](https://img.shields.io/github/contributors/adaumsilva/RAG-framework)](https://github.com/Ayorinha/RAG-framework/graphs/contributors)
