@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Retrieval similarity scores on `Chunk` across InMemory, FAISS, and Chroma retrievers, with configurable pipeline score thresholds (closes #33)
 - PEP 561 `py.typed` marker in source distributions and wheels so downstream type checkers can use the package's annotations (closes #47).
 - Add an optional `max_chars` limit to `SentenceChunker`.
 - `RAGConfig.embed_batch_size` so `RAGPipeline.ingest()` embeds chunks in bounded batches (closes #42)

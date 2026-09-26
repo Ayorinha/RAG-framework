@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from typing import Any
 
 from ragframework.base import Chunk, Retriever
@@ -46,7 +47,18 @@ class ChromaRetriever(Retriever):
 
             self._collection = self._client.get_or_create_collection(
                 name=collection_name,
+                metadata={"hnsw:space": "cosine"},
             )
+            metadata = self._collection.metadata or {}
+            actual_space = metadata.get("hnsw:space", "l2")
+            if actual_space != "cosine":
+                raise RetrieverError(
+                    f"Chroma collection '{collection_name}' uses distance metric "
+                    f"'{actual_space}', but ragframework requires 'cosine'. "
+                    "Rebuild the collection with 'cosine' distance."
+                )
+        except RetrieverError:
+            raise
         except Exception as exc:
             raise RetrieverError(f"Could not initialize ChromaDB: {exc}") from exc
 
@@ -91,7 +103,7 @@ class ChromaRetriever(Retriever):
             result = self._collection.query(
                 query_embeddings=query_embeddings,
                 n_results=top_k,
-                include=["documents", "metadatas"],
+                include=["documents", "metadatas", "distances"],
             )
         except Exception as exc:
             raise RetrieverError(f"Failed to query ChromaDB: {exc}") from exc
@@ -99,24 +111,30 @@ class ChromaRetriever(Retriever):
         ids_result = result.get("ids") or []
         documents_result = result.get("documents") or []
         metadatas_result = result.get("metadatas") or []
+        distances_result = result.get("distances") or []
 
         ids = ids_result[0] if ids_result else []
         documents = documents_result[0] if documents_result else []
         metadatas = metadatas_result[0] if metadatas_result else []
+        distances = distances_result[0] if distances_result else []
 
         chunks_result: list[Chunk] = []
 
-        for chunk_id, document, metadata in zip(
+        for chunk_id, document, metadata, distance in zip(
             ids,
             documents,
             metadatas,
+            distances,
             strict=True,
         ):
             chunks_result.append(
-                Chunk(
-                    id=chunk_id,
-                    content=document or "",
-                    metadata=self._restore_metadata(metadata or {}),
+                replace(
+                    Chunk(
+                        id=chunk_id,
+                        content=document or "",
+                        metadata=self._restore_metadata(metadata or {}),
+                    ),
+                    score=1.0 - float(distance),
                 )
             )
 

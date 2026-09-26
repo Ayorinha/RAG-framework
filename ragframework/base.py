@@ -39,12 +39,14 @@ class Chunk:
         content: Text content of this chunk.
         metadata: Inherited / augmented metadata from the parent document.
         embedding: Optional dense vector produced by an :class:`Embedder`.
+        score: Cosine similarity assigned by a retriever, or ``None`` before retrieval.
     """
 
     id: str
     content: str
     metadata: dict[str, Any] = field(default_factory=dict)
     embedding: list[float] | None = None
+    score: float | None = None
 
 
 @dataclass

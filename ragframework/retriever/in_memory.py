@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -64,7 +65,9 @@ class InMemoryRetriever(Retriever):
 
         Invalid query vectors or dimensions raise ``RetrieverError``.
         """
-        if not self._chunks or self._matrix is None:
+        if not isinstance(top_k, int) or isinstance(top_k, bool):
+            raise RetrieverError("top_k must be an integer.")
+        if top_k <= 0 or not self._chunks or self._matrix is None:
             return []
         q = validate_vector(query_embedding, "Query embedding")
         if q.shape[0] != self._dimension:
@@ -75,7 +78,7 @@ class InMemoryRetriever(Retriever):
         k = min(top_k, len(self._chunks))
         top_indices = np.argpartition(scores, -k)[-k:]
         top_indices = top_indices[np.argsort(scores[top_indices])[::-1]]
-        return [self._chunks[i] for i in top_indices]
+        return [replace(self._chunks[i], score=float(scores[i])) for i in top_indices]
 
     def __len__(self) -> int:
         return len(self._chunks)

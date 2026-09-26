@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import chromadb
 import pytest
 
 from ragframework.base import Chunk
@@ -60,6 +61,8 @@ def test_add_and_retrieve():
     assert results[0].id == "chunk-1"
     assert results[0].content == "Content chunk-1"
     assert results[0].metadata["source"] == "test.txt"
+    assert results[0].score == pytest.approx(1.0)
+    assert chunks[0].score is None
 
 
 def test_retrieve_top_k_limited():
@@ -302,3 +305,33 @@ def test_user_metadata_with_old_empty_marker_is_preserved():
 
     assert len(results) == 1
     assert results[0].metadata == metadata
+
+
+def test_existing_l2_collection_is_rejected(tmp_path: Path):
+    persist_directory = tmp_path / "legacy-l2"
+    client = chromadb.PersistentClient(path=str(persist_directory))
+    client.get_or_create_collection(
+        name="legacy_l2",
+        metadata={"hnsw:space": "l2"},
+    )
+
+    with pytest.raises(RetrieverError, match=r"l2.*requires 'cosine'"):
+        ChromaRetriever(
+            collection_name="legacy_l2",
+            persist_directory=str(persist_directory),
+        )
+
+
+def test_new_collection_uses_cosine_distance():
+    retriever = ChromaRetriever(collection_name="test_cosine_metric")
+    assert retriever._collection.metadata["hnsw:space"] == "cosine"
+
+
+def test_chroma_score_is_cosine_similarity():
+    retriever = ChromaRetriever(collection_name="test_chroma_score")
+    chunk = make_chunk("score", [1.0, 0.0])
+    retriever.add([chunk])
+
+    result = retriever.retrieve([1.0, 0.0], top_k=1)
+    assert result[0].score == pytest.approx(1.0)
+    assert chunk.score is None

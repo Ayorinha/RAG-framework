@@ -151,6 +151,57 @@ class TestRAGPipeline:
         assert [chunk.id for chunk in generator.context] == ["3"]
         assert [chunk.id for chunk in response.source_chunks] == ["3"]
 
+    def test_score_threshold_filters_before_reranking(self):
+        class FixedRetriever(InMemoryRetriever):
+            def retrieve(self, query_embedding, top_k=5):
+                return [
+                    Chunk(id="low", content="low", score=0.25),
+                    Chunk(id="boundary", content="boundary", score=0.80),
+                    Chunk(id="high", content="high", score=0.95),
+                ][:top_k]
+
+        class RecordingReranker(Reranker):
+            def __init__(self):
+                self.seen = []
+
+            def rerank(self, query, chunks, top_k):
+                self.seen = list(chunks)
+                return list(chunks)[:top_k]
+
+        generator = RecordingGenerator()
+        reranker = RecordingReranker()
+        p = RAGPipeline(
+            loader=TextFileLoader(),
+            chunker=FixedSizeChunker(),
+            embedder=RandomEmbedder(dim=16, seed=0),
+            retriever=FixedRetriever(),
+            generator=generator,
+            reranker=reranker,
+            config=RAGConfig(top_k=2, score_threshold=0.80),
+        )
+
+        response = p.query("test")
+
+        assert [chunk.id for chunk in reranker.seen] == ["boundary", "high"]
+        assert [chunk.id for chunk in response.source_chunks] == ["boundary", "high"]
+
+    def test_score_threshold_keeps_unscored_custom_retriever_results(self):
+        class FixedRetriever(InMemoryRetriever):
+            def retrieve(self, query_embedding, top_k=5):
+                return [Chunk(id="unscored", content="custom")]
+
+        p = RAGPipeline(
+            loader=TextFileLoader(),
+            chunker=FixedSizeChunker(),
+            embedder=RandomEmbedder(dim=16, seed=0),
+            retriever=FixedRetriever(),
+            generator=RecordingGenerator(),
+            config=RAGConfig(score_threshold=0.80),
+        )
+
+        response = p.query("test")
+        assert [chunk.id for chunk in response.source_chunks] == ["unscored"]
+
     def test_query_without_reranker_uses_top_k_override_for_final_limit(self):
         class FixedRetriever(InMemoryRetriever):
             def retrieve(self, query_embedding, top_k=5):
